@@ -1,0 +1,79 @@
+{
+  "name": "stalkerchat-backend",
+  "version": "1.0.0",
+  "description": "E2EE Messenger Backend",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "docker:build": "docker build -t stalkerchat/backend .",
+    "docker:run": "docker run -p 4000:4000 --env-file .env stalkerchat/backend"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.939.0",
+    "@aws-sdk/s3-request-presigner": "^3.939.0",
+    "@nestjs/common": "^11.1.9",
+    "@nestjs/config": "^4.0.2",
+    "@nestjs/core": "^11.1.9",
+    "@nestjs/event-emitter": "^3.0.1",
+    "@nestjs/platform-express": "^11.1.9",
+    "@nestjs/platform-ws": "^11.1.9",
+    "@nestjs/swagger": "^11.2.3",
+    "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/websockets": "^11.1.9",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3",
+    "pino": "^10.1.0",
+    "pino-pretty": "^13.1.2",
+    "swagger-ui-express": "^5.0.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@nestjs/cli": "^11.0.0",
+    "@nestjs/schematics": "^11.0.0",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "@types/swagger-ui-express": "^4.1.8",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
+    "prettier": "^3.6.2",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.6.3"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": "src",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node"
+  }
+}
