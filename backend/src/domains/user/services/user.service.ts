@@ -53,4 +53,13 @@ export class UserService {
       select: ['id', 'publicKey', 'displayName'],
     });
   }
+
+  async getUserPublicKeyBase64(userId: string): Promise<string | null> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['publicKey'],
+    });
+
+    return user?.publicKey?.toString('base64') || null;
+  }
 }
