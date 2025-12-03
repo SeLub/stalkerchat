@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from './use-auth';
 import { useNotifications } from './use-notifications';
@@ -7,19 +7,24 @@ import { toast } from 'sonner';
 interface WebSocketNotificationsProps {
   onChatCreated?: (chatId: string) => void;
   onMessageReceived?: (message: any) => void;
+  onUserOnline?: (userId: string) => void;
+  onUserOffline?: (userId: string) => void;
 }
 
-export function useWebSocketNotifications(onChatCreated?: (chatId: string) => void, onMessageReceived?: (message: any) => void) {
+export function useWebSocketNotifications(
+  onChatCreated?: (chatId: string) => void, 
+  onMessageReceived?: (message: any) => void,
+  onUserOnline?: (userId: string) => void,
+  onUserOffline?: (userId: string) => void
+) {
   const { user } = useAuth();
   const { incrementRequests, incrementAccepted } = useNotifications();
 
-  const stableOnChatCreated = useCallback((chatId: string) => {
-    onChatCreated?.(chatId);
-  }, [onChatCreated]);
-
-  const stableOnMessageReceived = useCallback((message: any) => {
-    onMessageReceived?.(message);
-  }, [onMessageReceived]);
+  const callbacksRef = useRef({ onChatCreated, onMessageReceived, onUserOnline, onUserOffline });
+  
+  useEffect(() => {
+    callbacksRef.current = { onChatCreated, onMessageReceived, onUserOnline, onUserOffline };
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +32,9 @@ export function useWebSocketNotifications(onChatCreated?: (chatId: string) => vo
     const socket: Socket = io('http://localhost:4000/messages', {
       withCredentials: true,
     });
+
+    // Store socket globally for message sending
+    window.socketInstance = socket;
 
     // Contact request received
     socket.on('contact_request_received', (data) => {
@@ -53,7 +61,7 @@ export function useWebSocketNotifications(onChatCreated?: (chatId: string) => vo
       
       // Handle chat creation
       if (chatId) {
-        stableOnChatCreated(chatId);
+        callbacksRef.current.onChatCreated?.(chatId);
       }
     });
 
@@ -67,18 +75,34 @@ export function useWebSocketNotifications(onChatCreated?: (chatId: string) => vo
 
     // Message received
     socket.on('message:new', (payload: any) => {
-      if (onMessageReceived) {
-        onMessageReceived({
-          id: Date.now().toString(),
-          text: atob(payload.encryptedContent),
-          fromUserId: payload.from,
-          isOwn: false,
-        });
-      }
+      callbacksRef.current.onMessageReceived?.({
+        id: Date.now().toString(),
+        text: atob(payload.encryptedContent),
+        fromUserId: payload.from,
+        isOwn: false,
+      });
     });
 
+    // Online status events
+    socket.on('user_online', (data: { userId: string }) => {
+      callbacksRef.current.onUserOnline?.(data.userId);
+    });
+
+    socket.on('user_offline', (data: { userId: string }) => {
+      callbacksRef.current.onUserOffline?.(data.userId);
+    });
+
+
+
+    // Heartbeat to maintain online status
+    const heartbeatInterval = setInterval(() => {
+      socket.emit('heartbeat');
+    }, 30000); // Every 30 seconds
+
     return () => {
+      clearInterval(heartbeatInterval);
       socket.disconnect();
+      window.socketInstance = null;
     };
-  }, [user, incrementRequests, incrementAccepted, stableOnChatCreated, stableOnMessageReceived]);
+  }, [user]);
 }

@@ -67,7 +67,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       const redis = this.redisService.getClient();
       await redis.setex(`online:${session.user.id}`, 60, '1');
 
-      console.log(`🟢 User ${session.user.id} connected`);
+      // 6. Уведомляем контакты о том, что пользователь онлайн
+      await this.notifyContactsUserOnline(session.user.id);
+
+
     } catch (error) {
       console.error('❌ WebSocket connection error:', error);
       client.disconnect(true);
@@ -76,8 +79,10 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
 
   async handleDisconnect(client: Socket) {
     if (client.data?.userId) {
-      console.log(`🔴 User ${client.data.userId} disconnected`);
-      // Статус "online" сбросится автоматически по TTL
+      const userId = client.data.userId;
+      const redis = this.redisService.getClient();
+      await redis.del(`online:${userId}`);
+      await this.notifyContactsUserOffline(userId);
     }
   }
 
@@ -99,7 +104,7 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         timestamp,
       });
 
-      console.log(`📨 Message delivered to user ${to}`);
+
     } catch (error) {
       console.error('❌ Message handling error:', error);
       client.emit('message:error', { error: 'Failed to send message' });
@@ -140,6 +145,37 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
         username: byUser.username?.username,
       },
       timestamp: new Date().toISOString(),
+    });
+  }
+
+  // Heartbeat для поддержания онлайн-статуса
+  @SubscribeMessage('heartbeat')
+  async handleHeartbeat(client: Socket) {
+    if (client.data?.userId) {
+      const redis = this.redisService.getClient();
+      await redis.setex(`online:${client.data.userId}`, 60, '1');
+    }
+  }
+
+  // Уведомление контактов о статусе онлайн
+  private async notifyContactsUserOnline(userId: string) {
+    const sockets = await this.server.fetchSockets();
+    sockets.forEach((socket) => {
+      const socketUserId = (socket as any).data?.userId;
+      if (socketUserId && socketUserId !== userId) {
+        this.server.to(`user:${socketUserId}`).emit('user_online', { userId });
+      }
+    });
+  }
+
+  // Уведомление контактов о статусе оффлайн
+  private async notifyContactsUserOffline(userId: string) {
+    const sockets = await this.server.fetchSockets();
+    sockets.forEach((socket) => {
+      const socketUserId = (socket as any).data?.userId;
+      if (socketUserId && socketUserId !== userId) {
+        this.server.to(`user:${socketUserId}`).emit('user_offline', { userId });
+      }
     });
   }
 }

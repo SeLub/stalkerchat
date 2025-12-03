@@ -19,7 +19,7 @@ function ChatRouteContent() {
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const { user } = useAuth();
-  const { chats, addChat, updateChatLastMessage, getChatById } = useChats();
+  const { chats, addChat, updateChatLastMessage, updateChatOnlineStatus, getChatById } = useChats();
 
   const handleSendMessage = (message: string) => {
     if (!socketRef.current || !selectedChatId) return;
@@ -105,21 +105,21 @@ function ChatRouteContent() {
     setMessages((prev) => [...prev, message]);
   }, []);
 
+  const handleUserOnline = useCallback((userId: string) => {
+    updateChatOnlineStatus(userId, true);
+  }, [updateChatOnlineStatus]);
+
+  const handleUserOffline = useCallback((userId: string) => {
+    updateChatOnlineStatus(userId, false);
+  }, [updateChatOnlineStatus]);
+
   // Enable WebSocket notifications and messaging
-  useWebSocketNotifications(handleChatCreated, handleMessageReceived);
+  useWebSocketNotifications(handleChatCreated, handleMessageReceived, handleUserOnline, handleUserOffline);
 
   // Get socket reference for sending messages
   useEffect(() => {
-    if (user) {
-      const socket = io("http://localhost:4000/messages", {
-        withCredentials: true,
-      });
-      socketRef.current = socket;
-
-      return () => {
-        socket.disconnect();
-        socketRef.current = null;
-      };
+    if (user && window.socketInstance) {
+      socketRef.current = window.socketInstance;
     }
   }, [user]);
 

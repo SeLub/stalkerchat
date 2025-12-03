@@ -29,7 +29,10 @@ export function MiddleHeader({ selectedChat, rightPanelOpen, onToggleRightPanel 
           </Avatar>
           <div className="ml-3">
             <div className="font-medium">{selectedChat.name}</div>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground flex items-center">
+              {selectedChat.isOnline && (
+                <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+              )}
               {selectedChat.isOnline ? "Online" : "Last seen recently"}
             </div>
           </div>
