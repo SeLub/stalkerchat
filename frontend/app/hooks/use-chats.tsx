@@ -21,24 +21,24 @@ export function useChats() {
 
   // Mock data for now - will be replaced with real API calls
   const mockChats: Chat[] = [
-    {
-      id: "6d36bdb6-8651-4d72-94f4-3c9aa13f489d",
-      name: "John Doe",
-      lastMessage: "Hello there!",
-      timestamp: "12:30",
-      unreadCount: 3,
-      isOnline: true,
-      phone: "+1 234 567 8900",
-      username: "johndoe",
-      publicKey: "fxhKP0trJd8XJR3IPTVOmA+BFXpFgWtJDRLC8LOZnMI=",
-    },
-    {
-      id: "saved-messages",
-      name: "Saved Messages",
-      lastMessage: "You: Test message",
-      timestamp: "11:45",
-      isOnline: false,
-    },
+    // {
+    //   id: "6d36bdb6-8651-4d72-94f4-3c9aa13f489d",
+    //   name: "John Doe",
+    //   lastMessage: "Hello there!",
+    //   timestamp: "12:30",
+    //   unreadCount: 3,
+    //   isOnline: true,
+    //   phone: "+1 234 567 8900",
+    //   username: "johndoe",
+    //   publicKey: "fxhKP0trJd8XJR3IPTVOmA+BFXpFgWtJDRLC8LOZnMI=",
+    // },
+    // {
+    //   id: "saved-messages",
+    //   name: "Saved Messages",
+    //   lastMessage: "You: Test message",
+    //   timestamp: "11:45",
+    //   isOnline: false,
+    // },
   ];
 
   useEffect(() => {
@@ -49,15 +49,18 @@ export function useChats() {
 
   const loadChatsFromBackend = async () => {
     try {
-      const res = await fetch('http://localhost:4000/contacts', {
-        credentials: 'include',
+      const res = await fetch("http://localhost:4000/contacts", {
+        credentials: "include",
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         const chats = data.contacts.map((contact: any) => ({
           id: `chat_${contact.user.id}`,
-          name: contact.user.displayName || `@${contact.user.username}` || "Unknown User",
+          name:
+            contact.user.displayName ||
+            `@${contact.user.username}` ||
+            "Unknown User",
           userId: contact.user.id,
           publicKey: contact.user.publicKey,
           isOnline: false,
@@ -73,6 +76,13 @@ export function useChats() {
     }
   };
 
+  // Load online statuses after chats are loaded
+  useEffect(() => {
+    if (chats.length > 0) {
+      loadOnlineStatuses();
+    }
+  }, [chats.length]);
+
   const addChat = (newChat: Partial<Chat>) => {
     const chat: Chat = {
       id: newChat.id || newChat.publicKey || Date.now().toString(),
@@ -85,9 +95,10 @@ export function useChats() {
     };
 
     setChats((prev) => {
-      // Check if chat already exists
+      // Check if chat already exists by userId or publicKey
       const exists = prev.find(
-        (c) => c.id === chat.id || c.publicKey === chat.publicKey
+        (c) => (c.userId && c.userId === chat.userId) || 
+               (c.publicKey && c.publicKey === chat.publicKey)
       );
       if (exists) return prev;
 
@@ -114,6 +125,40 @@ export function useChats() {
     );
   };
 
+  const updateChatOnlineStatus = (userId: string, isOnline: boolean) => {
+    setChats((prev) =>
+      prev.map((chat) =>
+        chat.userId === userId ? { ...chat, isOnline } : chat
+      )
+    );
+  };
+
+  const loadOnlineStatuses = async () => {
+    const userIds = chats.map(chat => chat.userId).filter(Boolean);
+    if (userIds.length === 0) return;
+
+    try {
+      const res = await fetch('http://localhost:4000/users/bulk-online-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ userIds }),
+      });
+
+      if (res.ok) {
+        const { statuses } = await res.json();
+        setChats((prev) =>
+          prev.map((chat) => ({
+            ...chat,
+            isOnline: chat.userId ? statuses[chat.userId] || false : false,
+          }))
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load online statuses:', error);
+    }
+  };
+
   const getChatById = (chatId: string) => {
     return chats.find((chat) => chat.id === chatId);
   };
@@ -123,6 +168,8 @@ export function useChats() {
     loading,
     addChat,
     updateChatLastMessage,
+    updateChatOnlineStatus,
+    loadOnlineStatuses,
     getChatById,
   };
 }

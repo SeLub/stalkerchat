@@ -63,6 +63,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
+      // Disconnect WebSocket before logout to trigger Redis cleanup
+      if (window.socketInstance) {
+        window.socketInstance.disconnect();
+        window.socketInstance = null;
+      }
+      
+      // Wait a bit for WebSocket cleanup to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await fetch('http://localhost:4000/auth/logout', {
         method: 'POST',
         credentials: 'include',
