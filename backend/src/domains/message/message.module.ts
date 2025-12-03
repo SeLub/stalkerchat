@@ -21,5 +21,6 @@ import { RedisService } from '../../common/redis.service';
     SessionService,
     RedisService,
   ],
+  exports: [ChatRoomService],
 })
 export class MessageModule {}

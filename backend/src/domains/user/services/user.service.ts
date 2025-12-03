@@ -51,6 +51,7 @@ export class UserService {
     return this.userRepository.findOne({
       where: { id: userId },
       select: ['id', 'publicKey', 'displayName'],
+      relations: ['username'],
     });
   }
 

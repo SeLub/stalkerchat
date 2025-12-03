@@ -104,6 +104,7 @@ export class AuthSessionController {
       id: user.id,
       publicKey: user.publicKey.toString('base64'),
       displayName: user.displayName,
+      username: user.username?.username,
     };
   }
 

@@ -19,10 +19,18 @@ export class UsernameService {
       // 1. Проверяем, не занято ли имя
       const existing = await manager.findOne(Username, {
         where: { username },
+        relations: ['user'],
       });
 
-      if (existing && existing.user.id !== userId) {
-        throw new ConflictException('Username is already taken');
+      if (existing) {
+        // If username belongs to different user, it's taken
+        if (existing.user.id !== userId) {
+          throw new ConflictException('Username is already taken');
+        }
+        // If it's the same user, just update the searchability
+        existing.isSearchable = isSearchable;
+        await manager.save(existing);
+        return existing;
       }
 
       // 2. Находим пользователя
@@ -35,15 +43,17 @@ export class UsernameService {
         throw new NotFoundException('User not found');
       }
 
-      // 3. Создаём или обновляем запись
-      let userUsername = user.username;
-      if (!userUsername) {
-        userUsername = manager.create(Username);
-        userUsername.user = user;
+      // 3. Удаляем старую запись если есть
+      if (user.username) {
+        await manager.remove(user.username);
       }
 
-      userUsername.username = username;
-      userUsername.isSearchable = isSearchable;
+      // 4. Создаём новую запись
+      const userUsername = manager.create(Username, {
+        username,
+        isSearchable,
+        user,
+      });
 
       await manager.save(userUsername);
       return userUsername;

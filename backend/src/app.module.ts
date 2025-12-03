@@ -4,6 +4,9 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DatabaseModule } from './db/database.module';
 import { UserModule } from './domains/user/user.module';
 import { UsernameModule } from './domains/username/username.module';
+import { MessageModule } from './domains/message/message.module';
+import { ContactModule } from './domains/contact/contact.module';
+import { ChatModule } from './domains/chat/chat.module';
 
 @Module({
   imports: [
@@ -12,6 +15,9 @@ import { UsernameModule } from './domains/username/username.module';
     DatabaseModule,
     UserModule,
     UsernameModule,
+    MessageModule,
+    ContactModule,
+    ChatModule,
   ],
 })
 export class AppModule {

@@ -10,6 +10,7 @@ import {
   Req,
   HttpCode,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { SetUsernameDto } from '../dto/set-username.dto';
@@ -31,19 +32,15 @@ export class UsernameController {
   }
 
   @Get('search/:username')
-  @HttpCode(HttpStatus.OK)
   async search(@Param('username') username: string) {
     const user = await this.usernameService.findUserByUsername(username);
     if (!user) {
-      return { found: false };
+      throw new NotFoundException('User not found');
     }
     return {
-      found: true,
-      user: {
-        id: user.id,
-        publicKey: user.publicKey,
-        displayName: user.displayName,
-      },
+      id: user.id,
+      publicKey: user.publicKey,
+      displayName: user.displayName,
     };
   }
 }

@@ -105,4 +105,41 @@ export class MessagesGateway implements OnGatewayConnection, OnGatewayDisconnect
       client.emit('message:error', { error: 'Failed to send message' });
     }
   }
+
+  // Contact request notifications
+  async notifyContactRequest(toUserId: string, fromUser: any, requestId: string, message?: string) {
+    this.server.to(`user:${toUserId}`).emit('contact_request_received', {
+      requestId,
+      fromUser: {
+        id: fromUser.id,
+        displayName: fromUser.displayName,
+        username: fromUser.username?.username,
+      },
+      message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async notifyRequestAccepted(toUserId: string, byUser: any, chatId?: string) {
+    this.server.to(`user:${toUserId}`).emit('contact_request_accepted', {
+      byUser: {
+        id: byUser.id,
+        displayName: byUser.displayName,
+        username: byUser.username?.username,
+      },
+      chatId,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  async notifyRequestRejected(toUserId: string, byUser: any) {
+    this.server.to(`user:${toUserId}`).emit('contact_request_rejected', {
+      byUser: {
+        id: byUser.id,
+        displayName: byUser.displayName,
+        username: byUser.username?.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  }
 }
