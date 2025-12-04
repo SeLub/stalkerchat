@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { UsernameSetupModal } from "@/components/username-setup-modal";
 import { PrivacySettingsModal } from "@/components/privacy-settings-modal";
+import { ThemeSelectorModal } from "@/components/theme-selector-modal";
 import { ContactsPage } from "@/components/contacts-page";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -38,6 +39,7 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
   const { logout } = useAuth();
   const [usernameModalOpen, setUsernameModalOpen] = useState(false);
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
   
   if (!page) return null;
 
@@ -187,7 +189,7 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
                 <SettingsItem
                   icon={<Palette className="h-5 w-5" />}
                   label="Theme"
-                  onClick={() => {}}
+                  onClick={() => setThemeModalOpen(true)}
                 />
               </SettingsSection>
 
@@ -222,6 +224,12 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
         <PrivacySettingsModal
           isOpen={privacyModalOpen}
           onClose={() => setPrivacyModalOpen(false)}
+        />
+        
+        {/* Theme Modal */}
+        <ThemeSelectorModal
+          isOpen={themeModalOpen}
+          onClose={() => setThemeModalOpen(false)}
         />
       </>
     );

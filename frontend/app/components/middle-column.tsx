@@ -4,7 +4,12 @@ import { MessageInput } from "@/components/message-input";
 
 interface MiddleColumnProps {
   selectedChat: any;
-  messages: { id: string; text: string; isOwn?: boolean; fromUserId?: string }[];
+  messages: {
+    id: string;
+    text: string;
+    isOwn?: boolean;
+    fromUserId?: string;
+  }[];
   rightPanelOpen: boolean;
   onToggleRightPanel: () => void;
   onSendMessage: (message: string) => void;

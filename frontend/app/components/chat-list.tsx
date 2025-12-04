@@ -18,9 +18,19 @@ interface ChatListProps {
   onNewChat: () => void;
 }
 
-export function ChatList({ chats, selectedChatId, onChatSelect, onNewChat }: ChatListProps) {
+export function ChatList({
+  chats,
+  selectedChatId,
+  onChatSelect,
+  onNewChat,
+}: ChatListProps) {
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
@@ -81,14 +91,19 @@ interface ChatItemProps {
 
 function ChatItem({ chat, isSelected, onClick }: ChatItemProps) {
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   return (
     <div
       onClick={onClick}
       className={`flex items-center p-3 cursor-pointer hover:bg-accent/50 ${
-        isSelected ? 'bg-accent' : ''
+        isSelected ? "bg-accent" : ""
       }`}
     >
       <div className="relative">
@@ -101,7 +116,7 @@ function ChatItem({ chat, isSelected, onClick }: ChatItemProps) {
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background" />
         )}
       </div>
-      
+
       <div className="ml-3 flex-1 min-w-0">
         <div className="flex items-center justify-between">
           <div className="font-medium truncate">{chat.name}</div>
@@ -111,14 +126,14 @@ function ChatItem({ chat, isSelected, onClick }: ChatItemProps) {
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between mt-1">
           <div className="text-sm text-muted-foreground truncate">
             {chat.lastMessage || "No messages yet"}
           </div>
           {chat.unreadCount && chat.unreadCount > 0 && (
             <div className="ml-2 bg-primary text-primary-foreground text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-              {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+              {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
             </div>
           )}
         </div>

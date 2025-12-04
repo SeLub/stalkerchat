@@ -1,0 +1,58 @@
+/* Stalker Theme - Privacy-focused green aesthetic */
+[data-theme="stalker"] {
+  /* Light mode */
+  --background: hsl(127, 50%, 90%);
+  --foreground: hsl(137, 40%, 15%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(137, 40%, 15%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(137, 40%, 15%);
+  --primary: hsl(100, 45%, 25%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(120, 15%, 95%);
+  --secondary-foreground: hsl(127, 40%, 15%);
+  --muted: hsl(120, 10%, 96%);
+  --muted-foreground: hsl(0, 0%, 45%);
+  --accent: hsl(80, 60%, 50%);
+  --accent-foreground: hsl(137, 40%, 15%);
+  --tertiary: hsl(190, 70%, 45%);
+  --tertiary-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(0, 70%, 50%);
+  --border: hsl(120, 15%, 88%);
+  --input: hsl(120, 10%, 96%);
+  --ring: hsl(100, 45%, 25%);
+  --message-own: hsl(100, 45%, 25%);
+  --message-own-text: hsl(0, 0%, 100%);
+  --message-other: hsl(120, 10%, 96%);
+  --message-other-text: hsl(137, 40%, 15%);
+  --online-status: hsl(140, 70%, 45%);
+}
+
+[data-theme="stalker"].dark {
+  /* Dark mode */
+  --background: hsl(127, 15%, 10%);
+  --foreground: hsl(127, 10%, 95%);
+  --card: hsl(120, 15%, 14%);
+  --card-foreground: hsl(120, 10%, 95%);
+  --popover: hsl(120, 15%, 14%);
+  --popover-foreground: hsl(120, 10%, 95%);
+  --primary: hsl(80, 60%, 55%);
+  --primary-foreground: hsl(120, 15%, 10%);
+  --secondary: hsl(120, 15%, 18%);
+  --secondary-foreground: hsl(120, 10%, 95%);
+  --muted: hsl(120, 10%, 16%);
+  --muted-foreground: hsl(0, 0%, 60%);
+  --accent: hsl(80, 60%, 55%);
+  --accent-foreground: hsl(120, 15%, 10%);
+  --tertiary: hsl(190, 70%, 60%);
+  --tertiary-foreground: hsl(120, 15%, 10%);
+  --destructive: hsl(0, 70%, 60%);
+  --border: hsl(120, 10%, 25%);
+  --input: hsl(120, 10%, 16%);
+  --ring: hsl(80, 60%, 55%);
+  --message-own: hsl(80, 60%, 55%);
+  --message-own-text: hsl(120, 15%, 10%);
+  --message-other: hsl(120, 15%, 18%);
+  --message-other-text: hsl(120, 10%, 95%);
+  --online-status: hsl(140, 70%, 55%);
+}
