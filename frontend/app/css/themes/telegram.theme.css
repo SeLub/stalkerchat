@@ -1,0 +1,58 @@
+/* Telegram Theme - Classic blue messenger */
+[data-theme="telegram"] {
+  /* Light mode */
+  --background: hsl(207, 70%, 90%);
+  --foreground: hsl(0, 0%, 0%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(0, 0%, 0%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 0%, 0%);
+  --primary: hsl(199, 100%, 40%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(240, 5%, 96%);
+  --secondary-foreground: hsl(0, 0%, 0%);
+  --muted: hsl(240, 5%, 96%);
+  --muted-foreground: hsl(240, 2%, 56%);
+  --accent: hsl(199, 89%, 95%);
+  --accent-foreground: hsl(199, 100%, 40%);
+  --tertiary: hsl(199, 100%, 40%);
+  --tertiary-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(4, 100%, 60%);
+  --border: hsl(240, 6%, 90%);
+  --input: hsl(240, 5%, 96%);
+  --ring: hsl(199, 100%, 40%);
+  --message-own: hsl(199, 100%, 40%);
+  --message-own-text: hsl(0, 0%, 100%);
+  --message-other: hsl(240, 5%, 96%);
+  --message-other-text: hsl(0, 0%, 0%);
+  --online-status: hsl(140, 50%, 48%);
+}
+
+[data-theme="telegram"].dark {
+  /* Dark mode */
+  --background: hsl(207, 30%, 14%);
+  --foreground: hsl(0, 0%, 100%);
+  --card: hsl(0, 0%, 17%);
+  --card-foreground: hsl(0, 0%, 100%);
+  --popover: hsl(0, 0%, 17%);
+  --popover-foreground: hsl(0, 0%, 100%);
+  --primary: hsl(254, 68%, 68%);
+  --primary-foreground: hsl(0, 0%, 100%);
+  --secondary: hsl(0, 0%, 17%);
+  --secondary-foreground: hsl(0, 0%, 100%);
+  --muted: hsl(0, 0%, 17%);
+  --muted-foreground: hsl(240, 2%, 56%);
+  --accent: hsl(0, 0%, 17%);
+  --accent-foreground: hsl(254, 68%, 68%);
+  --tertiary: hsl(254, 68%, 68%);
+  --tertiary-foreground: hsl(0, 0%, 100%);
+  --destructive: hsl(4, 100%, 65%);
+  --border: hsl(0, 0%, 23%);
+  --input: hsl(0, 0%, 17%);
+  --ring: hsl(254, 68%, 68%);
+  --message-own: hsl(254, 68%, 68%);
+  --message-own-text: hsl(0, 0%, 100%);
+  --message-other: hsl(0, 0%, 17%);
+  --message-other-text: hsl(0, 0%, 100%);
+  --online-status: hsl(140, 50%, 48%);
+}

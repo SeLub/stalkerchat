@@ -1,0 +1,58 @@
+/* Minimal Theme - Clean monochrome design */
+[data-theme="minimal"] {
+  /* Light mode */
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(0, 0%, 9%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(0, 0%, 9%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(0, 0%, 9%);
+  --primary: hsl(0, 0%, 13%);
+  --primary-foreground: hsl(0, 0%, 98%);
+  --secondary: hsl(0, 0%, 97%);
+  --secondary-foreground: hsl(0, 0%, 13%);
+  --muted: hsl(0, 0%, 97%);
+  --muted-foreground: hsl(0, 0%, 46%);
+  --accent: hsl(0, 0%, 97%);
+  --accent-foreground: hsl(0, 0%, 13%);
+  --tertiary: hsl(0, 0%, 13%);
+  --tertiary-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 84%, 60%);
+  --border: hsl(0, 0%, 91%);
+  --input: hsl(0, 0%, 91%);
+  --ring: hsl(0, 0%, 63%);
+  --message-own: hsl(0, 0%, 13%);
+  --message-own-text: hsl(0, 0%, 98%);
+  --message-other: hsl(0, 0%, 97%);
+  --message-other-text: hsl(0, 0%, 9%);
+  --online-status: hsl(140, 50%, 48%);
+}
+
+[data-theme="minimal"].dark {
+  /* Dark mode */
+  --background: hsl(0, 0%, 9%);
+  --foreground: hsl(0, 0%, 98%);
+  --card: hsl(0, 0%, 13%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --popover: hsl(0, 0%, 13%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --primary: hsl(0, 0%, 91%);
+  --primary-foreground: hsl(0, 0%, 13%);
+  --secondary: hsl(0, 0%, 18%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --muted: hsl(0, 0%, 18%);
+  --muted-foreground: hsl(0, 0%, 63%);
+  --accent: hsl(0, 0%, 18%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --tertiary: hsl(0, 0%, 91%);
+  --tertiary-foreground: hsl(0, 0%, 13%);
+  --destructive: hsl(0, 84%, 70%);
+  --border: hsl(0, 0%, 18%);
+  --input: hsl(0, 0%, 18%);
+  --ring: hsl(0, 0%, 46%);
+  --message-own: hsl(0, 0%, 13%);
+  --message-own-text: hsl(0, 0%, 98%);
+  --message-other: hsl(0, 0%, 18%);
+  --message-other-text: hsl(0, 0%, 98%);
+  --online-status: hsl(140, 50%, 48%);
+}
