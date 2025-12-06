@@ -43,24 +43,28 @@ function ChatRouteContent() {
     const messageBytes = encoder.encode(message);
     const base64Message = btoa(String.fromCharCode(...messageBytes));
 
+    const timestamp = new Date().toISOString();
+
     socketRef.current.emit("message", {
       to: recipientId,
       type: "text",
       encryptedContent: base64Message,
       encryptedKey: "dummy_key",
-      timestamp: new Date().toISOString(),
+      timestamp,
     });
 
+    const messageId = `${user.id}_${Date.now()}`;
     const newMessage = {
-      id: Date.now().toString(),
+      id: messageId,
       text: message,
       isOwn: true,
     };
 
     setMessages((prev) => [...prev, newMessage]);
 
-    // Save to IndexedDB
-    await saveMessage(selectedChatId, user.id, message, true);
+    // Save sent message immediately using recipientId as chatId
+    console.log('💾 Saving sent message with recipientId:', recipientId);
+    await saveMessage(recipientId, user.id, message, true, messageId);
 
     // Update chat last message
     updateChatLastMessage(selectedChatId, `You: ${message}`);
@@ -70,8 +74,18 @@ function ChatRouteContent() {
     setSelectedChatId(chatId);
     setRightPanelOpen(false);
     
+    // Save to localStorage for persistence
+    localStorage.setItem('selectedChatId', chatId);
+    
+    // Get chat to find userId
+    const chat = getChatById(chatId);
+    // Always use userId as the key
+    const loadKey = chat?.userId || (chatId.startsWith('chat_') ? chatId.substring(5) : chatId);
+    
+    console.log('📚 Loading messages for userId:', loadKey);
     // Load messages from IndexedDB
-    const loadedMessages = await loadMessages(chatId);
+    const loadedMessages = await loadMessages(loadKey);
+    console.log('📚 Loaded', loadedMessages.length, 'messages');
     setMessages(loadedMessages);
   };
 
@@ -119,19 +133,33 @@ function ChatRouteContent() {
     [user?.id, addChat, setSelectedChatId, setNewChatModalOpen]
   );
 
+  const chatsRef = useRef(chats);
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
+
   const handleMessageReceived = useCallback(async (message: any) => {
-    let isDuplicate = false;
+    const selectedChat = chatsRef.current.find(c => c.id === selectedChatId);
     
-    setMessages((prev) => {
-      if (prev.some(m => m.id === message.id)) {
-        isDuplicate = true;
-        return prev;
-      }
-      return [...prev, message];
-    });
+    // Check if message is for currently selected chat (by userId or chatId)
+    const isSelectedChat = selectedChat && 
+      (selectedChat.userId === message.fromUserId || 
+       message.chatId === selectedChatId ||
+       message.chatId === selectedChatId?.replace('chat_', ''));
     
-    if (!isDuplicate && selectedChatId) {
-      await saveMessage(selectedChatId, message.fromUserId, message.text, false);
+    if (isSelectedChat) {
+      setMessages((prev) => {
+        if (prev.some(m => m.id === message.id)) {
+          return prev;
+        }
+        return [...prev, message];
+      });
+    }
+    
+    // Always save to IndexedDB using senderId as chatId (to match sent messages)
+    if (message.fromUserId) {
+      console.log('💾 Saving received message with senderId:', message.fromUserId);
+      await saveMessage(message.fromUserId, message.fromUserId, message.text, false, message.id);
     }
   }, [selectedChatId]);
 
@@ -168,6 +196,17 @@ function ChatRouteContent() {
   useEffect(() => {
     cleanupOldMessages();
   }, []);
+
+  // Restore selected chat on page load
+  useEffect(() => {
+    const savedChatId = localStorage.getItem('selectedChatId');
+    if (savedChatId && chats.length > 0) {
+      const chatExists = chats.find(c => c.id === savedChatId);
+      if (chatExists) {
+        handleChatSelect(savedChatId);
+      }
+    }
+  }, [chats.length]);
 
   const handleProfileClick = () => {
     setLeftPanelPage("profile");

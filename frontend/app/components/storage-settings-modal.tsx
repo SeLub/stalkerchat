@@ -125,6 +125,8 @@ export function StorageSettingsModal({ isOpen, onClose }: StorageSettingsModalPr
                       toast.success(`${count} messages deleted`, { duration: 3000 });
                       setShowConfirm(false);
                       onClose();
+                      // Reload page to refresh UI
+                      setTimeout(() => window.location.reload(), 500);
                     } catch (error) {
                       toast.error("Failed to delete messages", { duration: 3000 });
                     } finally {
