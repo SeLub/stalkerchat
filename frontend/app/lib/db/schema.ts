@@ -23,7 +23,7 @@ export interface PrivateKey {
 }
 
 export const SCHEMA = {
-  messages: "++id, chatId, timestamp",
+  messages: "id, chatId, timestamp",
   contacts: "++id",
   privateKeys: "id",
 };

@@ -81,10 +81,12 @@ export function useWebSocketNotifications(
       const decoder = new TextDecoder();
       const text = decoder.decode(bytes);
 
+      const timestampMs = new Date(payload.timestamp).getTime();
       callbacksRef.current.onMessageReceived?.({
-        id: `${payload.from}_${payload.timestamp}`,
+        id: `${payload.from}_${timestampMs}`,
         text,
         fromUserId: payload.from,
+        chatId: payload.chatId,
         isOwn: false,
       });
     });

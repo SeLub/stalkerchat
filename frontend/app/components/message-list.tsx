@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { getUserAccentColor } from "@/lib/colors";
 
 interface MessageListProps {
   messages: {
@@ -32,21 +33,35 @@ export function MessageList({ messages, selectedChat }: MessageListProps) {
             </div>
           </div>
         ) : (
-          messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`mb-2 p-3 rounded-lg max-w-xs shadow ${
-                msg.isOwn ? "ml-auto message-own" : "message-other"
-              }`}
-            >
-              {!msg.isOwn && (
-                <div className="text-xs text-muted-foreground mb-1">
-                  {selectedChat?.name || "Unknown"}
-                </div>
-              )}
-              <div>{msg.text}</div>
-            </div>
-          ))
+          messages.map((msg) => {
+            const accentColor =
+              !msg.isOwn && selectedChat?.userId
+                ? getUserAccentColor(selectedChat.userId)
+                : undefined;
+
+            const accentStyle = accentColor
+              ? {
+                  background: `linear-gradient(to right, ${accentColor} 2%, white 2%)`,
+                }
+              : undefined;
+
+            return (
+              <div
+                key={msg.id}
+                className={`mb-2 p-3 rounded-lg max-w-xs shadow ${
+                  msg.isOwn ? "ml-auto message-own" : "message-other"
+                }`}
+                style={accentStyle}
+              >
+                {!msg.isOwn && (
+                  <div className="text-xs text-muted-foreground mb-1">
+                    {selectedChat?.name || "Unknown"}
+                  </div>
+                )}
+                <div>{msg.text}</div>
+              </div>
+            );
+          })
         )}
 
         {/* авто-скролл вниз */}
