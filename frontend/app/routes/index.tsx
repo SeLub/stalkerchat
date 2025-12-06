@@ -8,9 +8,13 @@ import { AuthGuard } from "@/components/auth-guard";
 import { useAuth } from "@/hooks/use-auth";
 import { useChats } from "@/hooks/use-chats";
 import { useWebSocketNotifications } from "@/hooks/use-websocket-notifications";
+import { saveMessage, loadMessages } from "@/lib/db/message-storage";
+import { cleanupOldMessages } from "@/lib/db/cleanup";
 
 function ChatRouteContent() {
-  const [messages, setMessages] = useState<{ id: string; text: string; isOwn?: boolean; fromUserId?: string }[]>([]);
+  const [messages, setMessages] = useState<
+    { id: string; text: string; isOwn?: boolean; fromUserId?: string }[]
+  >([]);
   const [selectedChatId, setSelectedChatId] = useState<string | undefined>();
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const [leftPanelPage, setLeftPanelPage] = useState<
@@ -19,42 +23,56 @@ function ChatRouteContent() {
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const { user } = useAuth();
-  const { chats, addChat, updateChatLastMessage, updateChatOnlineStatus, getChatById } = useChats();
+  const {
+    chats,
+    addChat,
+    updateChatLastMessage,
+    updateChatOnlineStatus,
+    getChatById,
+  } = useChats();
 
-  const handleSendMessage = (message: string) => {
-    if (!socketRef.current || !selectedChatId) return;
+  const handleSendMessage = async (message: string) => {
+    if (!socketRef.current || !selectedChatId || !user) return;
 
     const selectedChat = getChatById(selectedChatId);
-    // Use userId if available, otherwise fall back to chat ID for mock chats
-    const recipientId = selectedChat?.userId || selectedChat?.id || selectedChatId;
+    const recipientId =
+      selectedChat?.userId || selectedChat?.id || selectedChatId;
+
+    // Encode Unicode to base64
+    const encoder = new TextEncoder();
+    const messageBytes = encoder.encode(message);
+    const base64Message = btoa(String.fromCharCode(...messageBytes));
 
     socketRef.current.emit("message", {
       to: recipientId,
       type: "text",
-      encryptedContent: btoa(message),
+      encryptedContent: base64Message,
       encryptedKey: "dummy_key",
       timestamp: new Date().toISOString(),
     });
 
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString(),
-        text: message,
-        isOwn: true,
-      },
-    ]);
+    const newMessage = {
+      id: Date.now().toString(),
+      text: message,
+      isOwn: true,
+    };
+
+    setMessages((prev) => [...prev, newMessage]);
+
+    // Save to IndexedDB
+    await saveMessage(selectedChatId, user.id, message, true);
 
     // Update chat last message
-    if (selectedChatId) {
-      updateChatLastMessage(selectedChatId, `You: ${message}`);
-    }
+    updateChatLastMessage(selectedChatId, `You: ${message}`);
   };
 
-  const handleChatSelect = (chatId: string) => {
+  const handleChatSelect = async (chatId: string) => {
     setSelectedChatId(chatId);
-    setMessages([]);
     setRightPanelOpen(false);
+    
+    // Load messages from IndexedDB
+    const loadedMessages = await loadMessages(chatId);
+    setMessages(loadedMessages);
   };
 
   const handleNewChat = () => {
@@ -101,20 +119,43 @@ function ChatRouteContent() {
     [user?.id, addChat, setSelectedChatId, setNewChatModalOpen]
   );
 
-  const handleMessageReceived = useCallback((message: any) => {
-    setMessages((prev) => [...prev, message]);
-  }, []);
+  const handleMessageReceived = useCallback(async (message: any) => {
+    let isDuplicate = false;
+    
+    setMessages((prev) => {
+      if (prev.some(m => m.id === message.id)) {
+        isDuplicate = true;
+        return prev;
+      }
+      return [...prev, message];
+    });
+    
+    if (!isDuplicate && selectedChatId) {
+      await saveMessage(selectedChatId, message.fromUserId, message.text, false);
+    }
+  }, [selectedChatId]);
 
-  const handleUserOnline = useCallback((userId: string) => {
-    updateChatOnlineStatus(userId, true);
-  }, [updateChatOnlineStatus]);
+  const handleUserOnline = useCallback(
+    (userId: string) => {
+      updateChatOnlineStatus(userId, true);
+    },
+    [updateChatOnlineStatus]
+  );
 
-  const handleUserOffline = useCallback((userId: string) => {
-    updateChatOnlineStatus(userId, false);
-  }, [updateChatOnlineStatus]);
+  const handleUserOffline = useCallback(
+    (userId: string) => {
+      updateChatOnlineStatus(userId, false);
+    },
+    [updateChatOnlineStatus]
+  );
 
   // Enable WebSocket notifications and messaging
-  useWebSocketNotifications(handleChatCreated, handleMessageReceived, handleUserOnline, handleUserOffline);
+  useWebSocketNotifications(
+    handleChatCreated,
+    handleMessageReceived,
+    handleUserOnline,
+    handleUserOffline
+  );
 
   // Get socket reference for sending messages
   useEffect(() => {
@@ -122,6 +163,11 @@ function ChatRouteContent() {
       socketRef.current = window.socketInstance;
     }
   }, [user]);
+
+  // Cleanup old messages on app start
+  useEffect(() => {
+    cleanupOldMessages();
+  }, []);
 
   const handleProfileClick = () => {
     setLeftPanelPage("profile");

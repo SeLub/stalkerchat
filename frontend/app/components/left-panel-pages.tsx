@@ -6,6 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { UsernameSetupModal } from "@/components/username-setup-modal";
 import { PrivacySettingsModal } from "@/components/privacy-settings-modal";
 import { ThemeSelectorModal } from "@/components/theme-selector-modal";
+import { StorageSettingsModal } from "@/components/storage-settings-modal";
 import { ContactsPage } from "@/components/contacts-page";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -18,6 +19,7 @@ import {
   Bell,
   Shield,
   Palette,
+  Database,
   Globe,
   HelpCircle,
   LogOut
@@ -40,6 +42,7 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
   const [usernameModalOpen, setUsernameModalOpen] = useState(false);
   const [privacyModalOpen, setPrivacyModalOpen] = useState(false);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
+  const [storageModalOpen, setStorageModalOpen] = useState(false);
   
   if (!page) return null;
 
@@ -193,6 +196,14 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
                 />
               </SettingsSection>
 
+              <SettingsSection title="Storage">
+                <SettingsItem
+                  icon={<Database className="h-5 w-5" />}
+                  label="Message History"
+                  onClick={() => setStorageModalOpen(true)}
+                />
+              </SettingsSection>
+
               <SettingsSection title="Advanced">
                 <SettingsItem
                   icon={<Globe className="h-5 w-5" />}
@@ -230,6 +241,12 @@ export function LeftPanelPages({ page, onBack, userProfile, onChatCreated }: Lef
         <ThemeSelectorModal
           isOpen={themeModalOpen}
           onClose={() => setThemeModalOpen(false)}
+        />
+        
+        {/* Storage Modal */}
+        <StorageSettingsModal
+          isOpen={storageModalOpen}
+          onClose={() => setStorageModalOpen(false)}
         />
       </>
     );

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./use-auth";
+import { saveContact } from "@/lib/db/contact-storage";
 
 interface Chat {
   id: string;
@@ -65,6 +66,12 @@ export function useChats() {
           publicKey: contact.user.publicKey,
           isOnline: false,
         }));
+        
+        // Save contacts to IndexedDB
+        for (const chat of chats) {
+          await saveContact(chat.userId, chat.name, false);
+        }
+        
         setChats([...mockChats, ...chats]);
       } else {
         setChats(mockChats);

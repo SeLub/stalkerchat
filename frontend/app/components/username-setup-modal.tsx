@@ -53,26 +53,15 @@ export function UsernameSetupModal({
       });
 
       if (res.ok) {
-        toast.success("Username updated successfully");
-        await checkAuth(); // Refresh user profile
+        toast.success("Username updated successfully", { duration: 3000 });
+        await checkAuth();
         onClose();
       } else {
-        let errorMessage = "Failed to update username";
-        try {
-          const errorData = await res.json();
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-        } catch {
-          const errorText = await res.text();
-          if (errorText) {
-            errorMessage = errorText;
-          }
-        }
-        toast.error(errorMessage);
+        const errorData = await res.json().catch(() => ({ message: "Failed to update username" }));
+        toast.error(errorData.message || "Failed to update username", { duration: 3000 });
       }
     } catch (error) {
-      toast.error("Failed to update username");
+      toast.error("Failed to update username", { duration: 3000 });
     } finally {
       setLoading(false);
     }
