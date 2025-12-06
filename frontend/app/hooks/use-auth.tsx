@@ -1,15 +1,23 @@
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  type ReactNode,
+} from "react";
 
 interface User {
   id: string;
   publicKey: string;
   displayName?: string;
+  username?: string;
+  // Приватный ключ НЕ хранится в этом объекте — он остаётся в зашифрованной Dexie-БД
 }
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  register: (deviceId: string) => Promise<void>;
   login: (publicKey: string, deviceId: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -21,67 +29,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Проверка аутентификации при старте
   const checkAuth = async () => {
     try {
-      const res = await fetch('http://localhost:4000/auth/profile', {
-        credentials: 'include',
+      const res = await fetch("http://localhost:4000/auth/profile", {
+        credentials: "include",
       });
-      
+
       if (res.ok) {
         const profile = await res.json();
         setUser(profile);
       } else if (res.status === 401) {
-        // Clear invalid cookies
-        document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        clearAuthCookies();
         setUser(null);
       } else {
         setUser(null);
       }
     } catch (error) {
+      console.error("Auth check error:", error);
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const login = async (publicKey: string, deviceId: string) => {
-    const res = await fetch('http://localhost:4000/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ publicKey, deviceId }),
+  const clearAuthCookies = () => {
+    document.cookie =
+      "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    document.cookie =
+      "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+  };
+
+  // Регистрация — генерация ключей и сохранение в зашифрованной БД
+  const register = async (deviceId: string) => {
+    // Генерация Ed25519-пары
+    const keyPair = await window.crypto.subtle.generateKey(
+      { name: "Ed25519" },
+      true,
+      ["sign", "verify"]
+    );
+    const publicKey = await window.crypto.subtle.exportKey(
+      "raw",
+      keyPair.publicKey
+    );
+    const privateKey = await window.crypto.subtle.exportKey(
+      "pkcs8",
+      keyPair.privateKey
+    );
+
+    const publicKeyBase64 = btoa(
+      String.fromCharCode(...new Uint8Array(publicKey))
+    );
+    const privateKeyUint8 = new Uint8Array(privateKey);
+
+    // ✅ Сохраняем приватный ключ в зашифрованной Dexie-БД
+    const { storeKeyPair } = await import("@/lib/db/key-management");
+    await storeKeyPair(publicKeyBase64, privateKeyUint8);
+
+    // Отправка публичного ключа на сервер
+    const res = await fetch("http://localhost:4000/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ publicKey: publicKeyBase64, deviceId }),
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
+      throw new Error(`Registration failed: ${res.status}`);
+    }
+
+    await checkAuth(); // Получаем профиль после входа
+  };
+
+  // Вход — используем сохранённый публичный ключ
+  const login = async (publicKeyBase64: string, deviceId: string) => {
+    const res = await fetch("http://localhost:4000/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ publicKey: publicKeyBase64, deviceId }),
+    });
+
+    if (!res.ok) {
       throw new Error(`Login failed: ${res.status}`);
     }
 
     await checkAuth();
   };
 
+  // Выход
   const logout = async () => {
     try {
-      // Disconnect WebSocket before logout to trigger Redis cleanup
+      // Отключаем WebSocket (если используется)
       if (window.socketInstance) {
         window.socketInstance.disconnect();
         window.socketInstance = null;
       }
-      
-      // Wait a bit for WebSocket cleanup to complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      await fetch('http://localhost:4000/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
+
+      await fetch("http://localhost:4000/auth/logout", {
+        method: "POST",
+        credentials: "include",
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      // Clear cookies by setting them to expire
-      document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      clearAuthCookies();
       setUser(null);
     }
   };
@@ -91,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, register, login, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );
@@ -100,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

@@ -75,9 +75,15 @@ export function useWebSocketNotifications(
 
     // Message received
     socket.on('message:new', (payload: any) => {
+      // Decode base64 to Unicode
+      const binaryString = atob(payload.encryptedContent);
+      const bytes = Uint8Array.from(binaryString, c => c.charCodeAt(0));
+      const decoder = new TextDecoder();
+      const text = decoder.decode(bytes);
+
       callbacksRef.current.onMessageReceived?.({
-        id: Date.now().toString(),
-        text: atob(payload.encryptedContent),
+        id: `${payload.from}_${payload.timestamp}`,
+        text,
         fromUserId: payload.from,
         isOwn: false,
       });
@@ -101,6 +107,12 @@ export function useWebSocketNotifications(
 
     return () => {
       clearInterval(heartbeatInterval);
+      socket.off('contact_request_received');
+      socket.off('contact_request_accepted');
+      socket.off('contact_request_rejected');
+      socket.off('message:new');
+      socket.off('user_online');
+      socket.off('user_offline');
       socket.disconnect();
       window.socketInstance = null;
     };

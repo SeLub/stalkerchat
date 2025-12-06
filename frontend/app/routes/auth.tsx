@@ -1,33 +1,40 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useAuth } from "@/hooks/use-auth";
+import { db } from "@/lib/db/db";
+import {
+  storeKeyPair,
+  getPrivateKey,
+  hasStoredKey,
+  clearStoredKey,
+} from "@/lib/db/key-management";
 
 export default function AuthRoute() {
   const [loading, setLoading] = useState(false);
-  const [hasStoredKey, setHasStoredKey] = useState(false);
-  const { user, login } = useAuth();
+  const [hasKey, setHasKey] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      window.location.href = '/';
-    }
-    
-    // Check if user has stored key
-    const storedKey = localStorage.getItem('stalker_private_key');
-    setHasStoredKey(!!storedKey);
-  }, [user]);
-
+    const checkKey = async () => {
+      const stored = await hasStoredKey();
+      setHasKey(stored);
+    };
+    checkKey();
+  }, []);
 
   const handleCreateAccount = async () => {
+    if (typeof window === "undefined") {
+      toast.error("This action is only available in browser");
+      return;
+    }
     setLoading(true);
     try {
+      // Генерация ключей
       const keyPair = await window.crypto.subtle.generateKey(
         { name: "Ed25519" },
         true,
         ["sign", "verify"]
       );
-      
+
       const publicKey = await window.crypto.subtle.exportKey(
         "raw",
         keyPair.publicKey
@@ -36,20 +43,36 @@ export default function AuthRoute() {
         "pkcs8",
         keyPair.privateKey
       );
-      
-      const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(publicKey)));
-      const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(privateKey)));
+
+      const publicKeyBase64 = btoa(
+        String.fromCharCode(...new Uint8Array(publicKey))
+      );
+      const privateKeyUint8 = new Uint8Array(privateKey);
       const deviceId = "web-browser-" + Date.now();
 
-      await login(publicKeyBase64, deviceId);
-      
-      // Store private key for future logins
-      localStorage.setItem('stalker_private_key', privateKeyBase64);
-      localStorage.setItem('stalker_public_key', publicKeyBase64);
-      
+      // Сохраняем в зашифрованном виде
+      await storeKeyPair(publicKeyBase64, privateKeyUint8);
+
+      // Отправляем на сервер
+      const res = await fetch("http://localhost:4000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ publicKey: publicKeyBase64, deviceId }),
+      });
+
+      console.log("🔐 Проверка crypto.subtle:", crypto.subtle);
+      console.log("🔐 Длина приватного ключа:", privateKeyUint8.length);
+
+      if (!res.ok) throw new Error("Login failed");
+      window.location.href = "/";
     } catch (error) {
       console.error("Auth error:", error);
-      toast.error(`Failed to create account: ${error.message}`);
+      toast.error(
+        `Failed to create account: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -58,27 +81,38 @@ export default function AuthRoute() {
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const storedPublicKey = localStorage.getItem('stalker_public_key');
-      if (!storedPublicKey) {
+      const record = await db.privateKeys.get("current");
+      if (!record) {
         toast.error("No stored key found");
+        setLoading(false);
         return;
       }
-      
+
       const deviceId = "web-browser-" + Date.now();
-      await login(storedPublicKey, deviceId);
-      
+      const res = await fetch("http://localhost:4000/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ publicKey: record.publicKeyBase64, deviceId }),
+      });
+
+      if (!res.ok) throw new Error("Login failed");
+      window.location.href = "/";
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(`Failed to login: ${error.message}`);
+      toast.error(
+        `Failed to login: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleClearKey = () => {
-    localStorage.removeItem('stalker_private_key');
-    localStorage.removeItem('stalker_public_key');
-    setHasStoredKey(false);
+  const handleClearKey = async () => {
+    await clearStoredKey();
+    setHasKey(false);
     toast.success("Stored key cleared");
   };
 
@@ -91,13 +125,9 @@ export default function AuthRoute() {
         <p className="text-muted-foreground text-center">
           Anonymous E2EE Messenger
         </p>
-        {hasStoredKey ? (
+        {hasKey ? (
           <div className="space-y-3">
-            <Button
-              onClick={handleLogin}
-              disabled={loading}
-              className="w-full"
-            >
+            <Button onClick={handleLogin} disabled={loading} className="w-full">
               {loading ? "Logging in..." : "Login"}
             </Button>
             <div className="text-center">
